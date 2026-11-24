@@ -1,0 +1,162 @@
+[
+ {
+  "id": 1,
+  "rfc": "9110",
+  "question": "What does the 308 status code mean?",
+  "must_contain": [
+   "308 Permanent Redirect"
+  ]
+ },
+ {
+  "id": 2,
+  "rfc": "9110",
+  "question": "Which request methods are defined as idempotent?",
+  "must_contain": [
+   "PUT, DELETE, and safe request methods"
+  ]
+ },
+ {
+  "id": 3,
+  "rfc": "9110",
+  "question": "Which status code is used for Unprocessable Content?",
+  "must_contain": [
+   "422 Unprocessable Content"
+  ]
+ },
+ {
+  "id": 4,
+  "rfc": "9110",
+  "question": "What does the Retry-After header field indicate?",
+  "must_contain": [
+   "how long the user agent ought to wait"
+  ]
+ },
+ {
+  "id": 5,
+  "rfc": "9110",
+  "question": "How is the HEAD method used?",
+  "must_contain": [
+   "obtain metadata about the selected representation without transferring its representation data"
+  ]
+ },
+ {
+  "id": 6,
+  "rfc": "9111",
+  "question": "What does the no-store response directive tell a cache?",
+  "must_contain": [
+   "store any part of either the immediate request or the response"
+  ]
+ },
+ {
+  "id": 7,
+  "rfc": "9111",
+  "question": "What does the Age header field convey?",
+  "must_contain": [
+   "sender's estimate of the time since the response was generated"
+  ]
+ },
+ {
+  "id": 8,
+  "rfc": "9111",
+  "question": "What heuristic freshness lifetime is typical when Last-Modified is present?",
+  "must_contain": [
+   "10%"
+  ]
+ },
+ {
+  "id": 9,
+  "rfc": "9421",
+  "question": "What does the created signature parameter contain?",
+  "must_contain": [
+   "creation time"
+  ]
+ },
+ {
+  "id": 10,
+  "rfc": "9421",
+  "question": "What does the @method derived component refer to?",
+  "must_contain": [
+   "refers to the HTTP method of a request message"
+  ]
+ },
+ {
+  "id": 11,
+  "rfc": "9110",
+  "question": "Which status code means Method Not Allowed?",
+  "must_contain": [
+   "405 Method Not Allowed"
+  ]
+ },
+ {
+  "id": 12,
+  "rfc": "9449",
+  "question": "Which value must the typ header of a DPoP proof JWT have?",
+  "must_contain": [
+   "dpop+jwt"
+  ]
+ },
+ {
+  "id": 13,
+  "rfc": "9449",
+  "question": "What is a DPoP proof?",
+  "must_contain": [
+   "A DPoP proof is a JWT that is signed"
+  ]
+ },
+ {
+  "id": 14,
+  "rfc": "9110",
+  "question": "Which status code means Not Modified?",
+  "must_contain": [
+   "304 (Not Modified)"
+  ]
+ },
+ {
+  "id": 15,
+  "rfc": "9700",
+  "question": "Why is the implicit grant discouraged in the security best current practice?",
+  "must_contain": [
+   "vulnerable to access token leakage"
+  ]
+ },
+ {
+  "id": 16,
+  "rfc": "9700",
+  "question": "Why is the resource owner password credentials grant unsafe?",
+  "must_contain": [
+   "insecurely exposes the credentials of the resource owner to the client"
+  ]
+ },
+ {
+  "id": 17,
+  "rfc": "9700",
+  "question": "How must the authorization server compare redirect URIs?",
+  "must_contain": [
+   "exact string matching"
+  ]
+ },
+ {
+  "id": 18,
+  "rfc": "9700",
+  "question": "What protects the authorization code against injection attacks?",
+  "must_contain": [
+   "code_challenge"
+  ]
+ },
+ {
+  "id": 19,
+  "rfc": "9068",
+  "question": "Which media type does the typ header of a JWT access token use?",
+  "must_contain": [
+   "at+jwt"
+  ]
+ },
+ {
+  "id": 20,
+  "rfc": "9068",
+  "question": "Which claims are used in the JWT access token data structure?",
+  "must_contain": [
+   "The following claims are used in the JWT access token data structure"
+  ]
+ }
+]
