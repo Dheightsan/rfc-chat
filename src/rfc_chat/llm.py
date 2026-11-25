@@ -11,8 +11,17 @@ def answer(
     client: httpx.Client | None = None,
 ) -> str:
     # Answers question using OpenAI-compatible chat API or extractive fallback.
+    return answer_with_usage(question, passages, client)[0]
+
+
+def answer_with_usage(
+    question: str,
+    passages: list[Chunk],
+    client: httpx.Client | None = None,
+) -> tuple[str, dict]:
+    # Same as answer, plus the token usage and cost the endpoint reported (empty if none).
     if not passages:
-        return "I don't know."
+        return "I don't know.", {}
 
     base_url = os.environ.get("LLM_BASE_URL")
     model = os.environ.get("LLM_MODEL")
@@ -49,7 +58,7 @@ def answer(
                 resp = http_client.post(endpoint, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
-        return str(data["choices"][0]["message"]["content"])
+        return str(data["choices"][0]["message"]["content"]), data.get("usage") or {}
 
     best = passages[0]
-    return f"{best.text}\n\n[RFC {best.rfc} p.{best.page}]"
+    return f"{best.text}\n\n[RFC {best.rfc} p.{best.page}]", {}

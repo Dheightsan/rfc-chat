@@ -64,3 +64,37 @@ def test_replace_document_creates_missing_db(tmp_path: Path) -> None:
     db = tmp_path / "new" / "i.db"
     assert replace_document(db, "9110", [CHUNK], HashingEmbedder(dim=256)) == 0
     assert len(load(db)[0]) == 1
+
+
+def test_cost_table_averages_runs() -> None:
+    from rfc_chat.cost import table
+
+    rows = [
+        {"question": "q", "seconds": 2.0, "prompt_tokens": 100, "completion_tokens": 10, "cost": 0},
+        {"question": "q", "seconds": 4.0, "prompt_tokens": 200, "completion_tokens": 30, "cost": 0},
+    ]
+    out = table(rows, "m")
+    assert "| q | 2 | 150 | 20 | 3.0 | 0.00000 |" in out
+    assert "mean of 2 calls" in out
+
+
+def test_answer_with_usage_returns_reported_usage(monkeypatch) -> None:
+    import httpx
+
+    from rfc_chat.llm import answer_with_usage
+
+    monkeypatch.setenv("LLM_BASE_URL", "http://x/v1")
+    monkeypatch.setenv("LLM_MODEL", "m")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "hi"}}],
+                "usage": {"prompt_tokens": 5, "completion_tokens": 2},
+            },
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    text, usage = answer_with_usage("q", [CHUNK], client)
+    assert text == "hi" and usage["prompt_tokens"] == 5

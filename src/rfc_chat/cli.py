@@ -66,6 +66,15 @@ def handle_eval(args: argparse.Namespace) -> int:
         print(f"Rechazos correctos: {refused}/{len(off)} (preguntas fuera del corpus)")
     return 0
 
+def handle_cost(args: argparse.Namespace) -> int:
+    # Measures tokens, time and cost per question through the configured LLM endpoint.
+    from rfc_chat.cost import run_cost
+
+    chunks, matrix = load(Path(args.db_path))
+    index = Index(chunks, matrix, FastEmbedder())
+    print(run_cost(index, args.questions, args.out))
+    return 0
+
 def handle_serve(args: argparse.Namespace) -> int:
     # Starts Uvicorn server for the FastAPI application.
     uvicorn.run("rfc_chat.api:create_app", factory=True, host=args.host, port=args.port)
@@ -107,6 +116,12 @@ def main() -> None:
     )
     eval_parser.add_argument("--db-path", default=default_db, help="Path to SQLite index db")
     eval_parser.set_defaults(func=handle_eval)
+
+    cost_parser = subparsers.add_parser("cost", help="Measure tokens and cost per question")
+    cost_parser.add_argument("--questions", default="eval/questions.json")
+    cost_parser.add_argument("--out", default="eval/cost.md")
+    cost_parser.add_argument("--db-path", default=default_db, help="Path to SQLite index db")
+    cost_parser.set_defaults(func=handle_cost)
 
     serve_parser = subparsers.add_parser("serve", help="Run API server")
     serve_parser.add_argument("--host", default="0.0.0.0", help="Host interface")

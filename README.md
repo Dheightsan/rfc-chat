@@ -47,11 +47,15 @@ Before answering, the chat checks that the retrieved passages contain at least 6
 - The device grant and HTTP/3 frames questions still get an answer, because the words appear in the corpus even though the content isn't there. A word check can't tell those apart. A model that reads the passages would have to.
 - None of the 20 real questions is refused. This was checked in the same run, not on separate data.
 
+### Cost per query
+
+`uv run rfc-chat cost` asks the first 10 evaluation questions 3 times each through the endpoint set in `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`, and writes the table to `eval/cost.md`. I ran it on `nvidia/nemotron-3.5-lightning:free` through OpenRouter. Averages over 30 calls: 704 input tokens, 1456 output tokens, 10 seconds, and 0 USD because the model is free. The output is large because that model writes its reasoning before the answer. The token counts are the number to carry over to a paid model, and the price I did not measure. A first run on another free model stopped on rate limits, which is why the script waits and retries.
+
 ## What I tested and what I didn't
 
-The 17 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and the tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
+The 19 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and the tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
 
-- The eval measures retrieval only. It does not check the written answer, so the optional LLM path has been tested with a mocked HTTP client and never against a real model.
+- The eval measures retrieval only. It does not check the written answer, so the optional LLM path has been tested with a mocked HTTP client and once against a free model through the cost command, and the answers it wrote were not graded.
 - I wrote the questions and picked the phrases while reading the extracted text, so they favour wording that is in the chunks. It is 20 questions, enough to compare methods roughly and not to claim a general accuracy.
 - A chunk is cut at 900 characters, so a phrase that falls across a cut is a miss even if the right passage was found.
 - I have not run the API under load, and there is no auth.
