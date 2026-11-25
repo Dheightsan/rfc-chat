@@ -41,7 +41,7 @@ BM25 beats the small embedding model because many questions reuse the exact word
 
 ## What I tested and what I didn't
 
-The 11 unit tests pass. They use a hashing embedder, so they need no network or model. The numbers above come from one run on my machine.
+The 11 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and those tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
 
 - The eval measures retrieval only. It does not check the written answer, so the optional LLM path has been tested with a mocked HTTP client and never against a real model.
 - I wrote the questions and picked the phrases while reading the extracted text, so they favour wording that is in the chunks. It is 20 questions, enough to compare methods roughly and not to claim a general accuracy.
