@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 
 from rfc_chat.embed import Embedder, FastEmbedder
+from rfc_chat.guard import NO_ANSWER, is_supported
 from rfc_chat.llm import answer
 from rfc_chat.retrieve import Index
 from rfc_chat.store import load
@@ -69,6 +70,8 @@ def create_app(
 
         results = app.state.index.search(query=req.question, k=req.k, method=req.method)
         passages = [chunk for chunk, _ in results]
+        if not is_supported(req.question, passages):
+            return AskResponse(answer=NO_ANSWER, sources=[])
         ans = answer(req.question, passages)
         sources = [
             SourceItem(rfc=chunk.rfc, page=chunk.page, text=chunk.text, score=score)

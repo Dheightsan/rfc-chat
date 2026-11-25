@@ -17,7 +17,7 @@ uv run rfc-chat serve
 curl -s localhost:8000/ask -H "Content-Type: application/json" -d '{"question": "What does the 308 status code mean?"}'
 ```
 
-The first `ingest` downloads the embedding model (about 100 MB).
+The first `ingest` downloads the embedding model (about 100 MB). To change a PDF later, run `uv run rfc-chat ingest --update`: it swaps the chunks of each document and leaves the rest, so running it twice gives the same 1468 chunks.
 
 ## The evaluation
 
@@ -39,9 +39,17 @@ To reproduce: `uv run rfc-chat ingest` and then the command above. I did not tun
 
 BM25 beats the small embedding model because many questions reuse the exact words of the RFC. The hybrid does not beat BM25 here. Fusion gives the weaker embedding ranking the same weight, and on question 7 it pushed out a passage that both methods had found alone, while it rescued question 9. With 20 questions I can't say which is better in general.
 
+### When it doesn't know
+
+Before answering, the chat checks that the retrieved passages contain at least 60 % of the question's content words (stopwords out). If not, it says it doesn't know and returns no sources. Otherwise the answer carries its citation, `[RFC 9110 p.7]` style. `eval/unanswerable.json` has 10 questions the RFCs can't answer, and `rfc-chat eval` prints how many get refused:
+
+- 8 of 10 are refused. The 6 off-topic ones and 2 of the 4 that use RFC vocabulary (TLS 1.3 ciphers, SHA-3).
+- The device grant and HTTP/3 frames questions still get an answer, because the words appear in the corpus even though the content isn't there. A word check can't tell those apart. A model that reads the passages would have to.
+- None of the 20 real questions is refused. This was checked in the same run, not on separate data.
+
 ## What I tested and what I didn't
 
-The 11 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and those tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
+The 17 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and the tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
 
 - The eval measures retrieval only. It does not check the written answer, so the optional LLM path has been tested with a mocked HTTP client and never against a real model.
 - I wrote the questions and picked the phrases while reading the extracted text, so they favour wording that is in the chunks. It is 20 questions, enough to compare methods roughly and not to claim a general accuracy.

@@ -41,6 +41,34 @@ def build_index(db_path: str | Path, chunks: list[Chunk], embedder: Embedder) ->
     finally:
         conn.close()
 
+def replace_document(
+    db_path: str | Path, rfc: str, chunks: list[Chunk], embedder: Embedder
+) -> int:
+    # Swaps the stored chunks of one RFC for new ones; returns how many it removed.
+    db_file = Path(db_path)
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_file))
+    try:
+        with conn:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS chunks("
+                "id INTEGER PRIMARY KEY, rfc TEXT, page INT, text TEXT, embedding BLOB)"
+            )
+            removed = conn.execute("DELETE FROM chunks WHERE rfc = ?", (rfc,)).rowcount
+            if chunks:
+                embeddings = embedder.embed([c.text for c in chunks])
+                conn.executemany(
+                    "INSERT INTO chunks(rfc, page, text, embedding) VALUES (?, ?, ?, ?)",
+                    [
+                        (rfc, c.page, c.text, embeddings[i].astype(np.float32).tobytes())
+                        for i, c in enumerate(chunks)
+                    ],
+                )
+        return removed
+    finally:
+        conn.close()
+
+
 def load(db_path: str | Path) -> tuple[list[Chunk], np.ndarray]:
     # Loads chunks and embedding matrix from SQLite database.
     conn = sqlite3.connect(str(db_path))
