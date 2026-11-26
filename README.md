@@ -1,10 +1,28 @@
 # rfc-chat
 
-I made this to have an applied AI project with a number I can check. It answers questions about six RFC PDFs (HTTP semantics and caching, HTTP message signatures, DPoP, the OAuth security best practices and the JWT access token profile) and shows the pages it used. I picked RFCs because the answer is in the text, so a question can be graded without asking another model.
+[![ci](https://github.com/Dheightsan/rfc-chat/actions/workflows/ci.yml/badge.svg)](https://github.com/Dheightsan/rfc-chat/actions/workflows/ci.yml)
+
+A chat that answers questions about six RFC PDFs (HTTP semantics and caching, HTTP message signatures, DPoP, the OAuth security best practices and the JWT access token profile). Each answer comes with the RFC and page it used, and when the documents don't cover the question it says so. On my 20 test questions the right passage is in the top 3 results 16 times with BM25 or the hybrid search and 12 times with embeddings alone (table below).
+
+I made it to have an applied AI project with a number I can check. I picked RFCs because the answer is in the text, so a question can be graded without asking another model.
 
 Stack is Python, FastAPI, SQLite, fastembed (bge-small-en-v1.5), pypdf and pytest.
 
 ## How it works
+
+```mermaid
+flowchart LR
+    pdf[RFC PDFs] -->|ingest: pypdf, chunks| db[(SQLite: text and embeddings)]
+    q[question] --> search{search}
+    db --> search
+    search -->|cosine| dense[embeddings]
+    search -->|BM25| bm25[BM25]
+    dense --> rrf[rank fusion]
+    bm25 --> rrf
+    rrf --> check{covers the question?}
+    check -->|no| idk["I don't know"]
+    check -->|yes| ans[answer with RFC and page]
+```
 
 `ingest` reads the PDFs in `corpus/`, cuts each page into chunks of about 900 characters with 150 of overlap and stores them with their embeddings in SQLite. A question is searched three ways: by embeddings (cosine), by BM25 that I wrote, or by both joined with reciprocal rank fusion. `POST /ask` returns the best passages with RFC and page. If `LLM_BASE_URL` and `LLM_MODEL` are set (any OpenAI compatible endpoint, `LLM_API_KEY` optional) the passages go to that model (temperature 0, told to say it doesn't know if the passages don't cover it) to write the answer. If not, the answer is the best passage itself.
 
@@ -14,8 +32,27 @@ Stack is Python, FastAPI, SQLite, fastembed (bge-small-en-v1.5), pypdf and pytes
 uv sync
 uv run rfc-chat ingest
 uv run rfc-chat serve
-curl -s localhost:8000/ask -H "Content-Type: application/json" -d '{"question": "What does the 308 status code mean?"}'
 ```
+
+To get written answers, export `LLM_BASE_URL` (for example `https://openrouter.ai/api/v1`), `LLM_MODEL` and, if the endpoint needs it, `LLM_API_KEY` before `serve`. The app does not read a `.env` file. Without them the answer is the best passage.
+
+### Example
+
+```bash
+curl -s localhost:8000/ask -H "Content-Type: application/json" \
+  -d '{"question": "Which media type does the typ header of a JWT access token use?"}'
+```
+
+Real output from my index, with the answer cut after its first sentences and the passage texts left out of `sources`:
+
+```json
+{
+  "answer": "token. jwt access tokens include this media type in the \"typ\" header parameter to explicitly declare that the jwt represents an access token complying with this profile. per the definition of \"typ\" in , it is that the \"application/\" prefix be omitted. therefore, the \"typ\" value used be \"at+jwt\". ...",
+  "sources": [{"rfc": "9068", "page": 4}, {"rfc": "9068", "page": 4}, {"rfc": "9068", "page": 11}]
+}
+```
+
+Without a model the answer is the best passage as extracted: lowercase, and with the words MUST and SHOULD missing (see Limits). The page numbers are right. It does not always land well. For "What does the 308 status code mean?" the top passage is the status code index at the end of RFC 9110, not the definition. A model reading the passages can fix the wording, not the retrieval.
 
 The first `ingest` downloads the embedding model (about 100 MB). To change a PDF later, run `uv run rfc-chat ingest --update`: it swaps the chunks of each document and leaves the rest, so running it twice gives the same 1468 chunks.
 
@@ -53,7 +90,7 @@ Before answering, the chat checks that the retrieved passages contain at least 6
 
 ## What I tested and what I didn't
 
-The 19 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and the tests, because the evaluation needs the embedding model download. The CI has not run yet, so GitHub's first run is its first test. The numbers above come from one run on my machine.
+The 19 unit tests pass. They use a hashing embedder, so they need no network or model. The CI runs only ruff and the tests, because the evaluation needs the embedding model download. The CI also runs gitleaks and CodeQL. The numbers above come from one run on my machine.
 
 - The eval measures retrieval only. It does not check the written answer, so the optional LLM path has been tested with a mocked HTTP client and once against a free model through the cost command, and the answers it wrote were not graded.
 - I wrote the questions and picked the phrases while reading the extracted text, so they favour wording that is in the chunks. It is 20 questions, enough to compare methods roughly and not to claim a general accuracy.
